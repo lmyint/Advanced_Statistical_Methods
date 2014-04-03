@@ -1,0 +1,391 @@
+Lesson Name:  Multiple Hypothesis Testing
+Course Name:  Advanced Statistical Methods
+Type:         Standard
+Author:       Leslie Myint
+Organization: Department of Biostatistics - Johns Hopkins Bloomberg School of Public Health
+Version:      2.2.1
+================================================================
+
+--- &text
+
+Consider flipping a fair coin 10 times. The probability of getting 10 heads is (1/2)^10 or 1/1024. So if we were testing the hypothesis that Person X has supernatural coin flipping skills, the probability of seeing such an extreme result of 10 heads is quite low. Now consider having 10,000 people perform this test. i.e. Each of these 10,000 people flips a fair coin 10 times. How many people would we expect to get 10 heads?
+
+--- &text
+
+We would expect about 10,000/1024 (approxmately 10) people to get 10 heads in a row. However, this does not necessarily mean that these 10 people have supernatural coin flipping skills. It could just be that in repeating the experiment so many times, we found significant results purely by chance.
+
+--- &text
+
+To illustrate this point in a slightly different way, consider Person X, who is completely devoid of any special coin-flipping powers, performing the experiment on himself 10,000 times (he has a lot of time on his hands!). By chance alone, we would expect him to get 10 heads in approximately 10 out of these 10,000 experiments. But does this mean that he actually has special powers? No--these results are simply the artifact of repeated experimentation.
+
+--- &text
+
+This is the issue of multiple hypothesis testing. When researchers are trying to perform many hypothesis tests simultaneously, they run into this problem of falsely detecting significant activity. The significance level specified for a single hypothesis test no longer suffices to ensure that the probability of ANY type I errors is below this significance level.
+
+--- &text
+
+Instead of specifying a significance level for a single test, one approach to correct for multiple testing is to specify a significance level for the entire experiment. This is called the familywise error rate (FWER) and is the probability of making ANY type I errors in the entire experiment.
+
+--- &text
+
+Let's explore a basic method of controlling the FWER--the Bonferroni correction. Recall that Boole's inequality states that the probability of a finite union of events is less than or equal to the sum of the probabilities of the events. Boole's inequality forms the basis of the Bonferroni correction.
+
+--- &text
+
+Let's say that you want a FWER of 0.05 and you are running 100,000 tests. To use the Bonferroni correction, we divide our desired FWER by the number of tests to get the significance level for each individual test. So the significance level for each of our 100,000 tests will be 0.05/1E5, which is 5E-7. In this way, the event that ANY type I error occurs is the event formed by the union of all 100,000 tests. The probability of this union is bounded above by the sum of the probablilites: 100,000*5E-7 = 0.05. Let's see what this correction is doing with a simple example.
+
+--- &cmd_question
+
+Let's simulate data from a normal distribution with mean 0 and variance 1 and conduct hypothesis tests to see if the mean of the distribution truly is 0. Type 'set.seed(1)' to seed the random number generator (we want reproducible results!)
+```{r}
+set.seed(1)
+```
+
+*** .hint
+Type 'set.seed(1)'
+
+--- &cmd_question
+
+Set the number of tests to be 100,000. Type 't = 100000'
+
+```{r}
+t = 100000
+```
+
+*** .hint
+Type 't = 100000'
+
+--- &cmd_question
+
+Set the size of each sample to be 400. Type 'samp.size = 400'
+
+```{r}
+samp.size = 400
+```
+
+*** .hint
+Type 'samp.size = 400'
+
+--- &cmd_question
+
+Type 'mat = matrix(rnorm(t*samp.size),nrow=t,ncol=samp.size)' to generate 100,000 samples of size 400 from the standard normal distribution.
+```{r}
+mat = matrix(rnorm(t*samp.size),nrow=t,ncol=samp.size)
+```
+
+*** .hint
+Type 'mat = matrix(rnorm(t*samp.size),nrow=t,ncol=samp.size)'
+
+--- &cmd_question
+
+Type 'pvals = apply(mat,1,function(row) {t.test(row)$p.value} )' to perform an unpaired two-sided t-test on each of the 100,000 samples.
+```{r}
+pvals = apply(mat,1,function(row) {t.test(row)$p.value} )
+```
+
+*** .hint
+Type 'pvals = apply(mat,1,function(row) {t.test(row)$p.value} )'
+
+--- &text
+
+Good! So we are performing 100,000 tests, and each test is testing whether the data come from a distribution with mean 0. (They all do!)
+
+--- &cmd_question
+
+Let's set our FWER, alpha, to be 0.05. Type 'alpha = 0.05'
+```{r}
+alpha = 0.05
+```
+
+*** .hint
+Type 'alpha = 0.05'
+
+--- &cmd_question
+
+How many of the p-values are less than or equal to 0.05? Type 'sum(pvals <= alpha)' to find out.
+```{r}
+sum(pvals <= alpha)
+```
+
+*** .hint
+Type 'sum(pvals <= alpha)'
+
+--- &text
+
+Good! Recall that each of the t = 100,000 samples was simulated from a normal distribution with mean 0 and variance 1. This means that every test for the mean of the distribution should not reject the null hypothesis that the mean is 0 (it is zero!). The tests which have a p-value of 0.05 or less would be rejcted at the common 95% significance level threshold and would be instances in which we would say that the mean of the distribution underlying the data was not zero when in fact it was.
+
+--- &text
+
+Note how close the number of significant test results was to 0.05*100,000 = 5000. This is a result of the fact that p-values are uniformly distributed under the null hypothesis. That is, given that the mean of the data distribution is truly 0, the p-values for each of these t-tests are drawn from a Uniform(0,1) distribution. Thus approximately 5% of the tests gave a significant result.
+
+--- &cmd_question
+
+Now let's correct for the fact that we performed 100,000 tests using the Bonferonni correction. Recall that this involves lowering our significance threshold from 0.05 to 5E-7 because 0.05/100,000 = 5E-7. How many of the p-values are less than 5E-7? Type 'sum(pvals <= alpha/t)' to find out.
+```{r}
+sum(pvals <= alpha/t)
+```
+
+*** .hint
+Type 'sum(pvals <= alpha/t)'
+
+--- &text
+
+Yup! See how the number of significant tests this time is much lower than when using the 0.05 threshold? If the point of the hypothesis tests is for some sort of activity or difference detection, we have just eliminated a lot of false positives. This is the advantage of multiple testing correction.
+
+--- &text
+
+Note that the Boneferroni method of controlling the familywise error rate does not require the hypothesis tests to be independent. In our example, the tests were independent but this is not needed to use the Bonferroni correction because the basis for the correction, Boole's inequality, holds regardless of the independence of the events.
+
+--- &text
+
+Because the bound for Boole's inequality is so general, it is often an extreme bound, and the Bonferroni correction is a very conservative one. i.e. We very rarely reject a test to call something significant, so our false positive rate is very low, but our power, our true positive rate, is also very low.
+
+--- &text
+
+Now let's look at another method of controlling the familywise error rate: the Sidak correction. Here we do assume that the tests are independent. Let's derive a formula for the significance level of individual tests. We want to control the probability of getting any type I errors at the FWER of alpha. Let alphaI be the type I error probability for an individual test. Then the probability of making NO type I errors is (1-alphaI)^t where t is the number of tests being performed. This calculation relied on the independence of the tests. The probability of making any type I errors (1 or more) is 1 minus the probability of making zero type I errors: 1-(1-alphaI)^t.
+
+--- &text
+
+Because we want to control this probability at alpha, we set the equation above equal to alpha and solve for alphaI. i.e.
+1-(1-alphaI)^t = alpha
+alphaI = 1-(1-alpha)^(1/t)
+
+--- &text
+
+So given a FWER, alpha, and the number of independent tests being performed, t, we can calculate the requisite type I error probability for individual tests.
+
+--- &cmd_question
+
+Let's apply the Sidak correction to the dataset we simulated in the last example. Calculate the type I error probability for an individual test using the fact that we want to control our FWER at 0.05 and we are performing t = 100,000 independent tests. Store this number in a variable called alphaSidak.
+
+```{r}
+alphaSidak = 1-(1-alpha)^(1/t)
+```
+
+*** .hint
+Try 'alphaSidak = 1-(1-alpha)^(1/t)'
+
+*** .ans_tests
+omnitest(correctVal = 5.129328e-07)
+
+--- &text
+Nice! Note how the significance threshold for an individual test using the Sidak correction is slightly less conservative than for the Bonferroni correction (5E-7). (i.e. The Sidak cutoff is higher, which increases the chance of a type I error/false positive but also increases power.)
+
+--- &cmd_question
+
+How many p-values meet the Sidak threshold? Type 'sum(pvals <= alphaSidak)'
+
+```{r}
+sum(pvals <= alphaSidak)
+```
+
+*** .hint
+Type 'sum(pvals <= alphaSidak)'
+
+--- &text
+
+Right! So although the Sidak correction gives us more statistical power to detect significant activity, it is still very conservative. And remember that the Sidak correction assumes that the hypothesis tests are independent.
+
+--- &text
+
+Let's look at one last method of controlling the familywise error rate: the Holm-Boneferroni method. This method, like the Bonferroni method, does not require the tests to be independent, and it is more powerful than the Bonferroni method. Why did we even study the Bonferroni method you may ask? The Boneferroni method is the simplest FWER controlling procedure and is actually still used in some applied fields today for that reason. For example, many genetic epidemiology and genome-wide association studies use the Bonferroni correction to correct for multiple testing. So although there are methods that are uniformly better than the Bonferroni correction, you should still be aware of it because it is still widely used.
+
+--- &text
+
+Let's take a look at how to use the Holm-Bonferroni correction. In this method, we order the p-values with their corresponding hypotheses from smallest to largest and find the smallest index k such that the k-th sorted p-value (i.e. the k-th smallest p-value) is greater than the threshold alpha/(t+1-k). (t is the number of hypothesis tests and alpha is the desired bound for the FWER.)
+
+--- &cmd_question
+
+Let's sort the p-values from our running example and store the original indices. Type 'pvals.sorted = sort.int(pvals,index.return=T)'
+
+```{r}
+pvals.sorted = sort.int(pvals,index.return=T)
+```
+
+*** .hint
+Type 'pvals.sorted = sort.int(pvals,index.return=T)'
+
+--- &cmd_question
+
+Let's calculate a vector of thresholds to which to compare our sorted p-values. Type 'thresholds = alpha/(t+1-seq(1,t))'
+
+```{r}
+thresholds = alpha/(t+1-seq(1,t))
+```
+
+*** .hint
+Type 'thresholds = alpha/(t+1-seq(1,t))'
+
+--- &cmd_question
+
+Now let's compare the sorted p-values to the thresholds we just calculated. Type 'pvals.pass.thresh = pvals.sorted[[1]] > thresholds'
+
+```{r}
+pvals.pass.thresh = pvals.sorted[[1]] > thresholds
+```
+
+*** .hint
+Type 'pvals.pass.thresh = pvals.sorted[[1]] > thresholds'
+
+--- &cmd_question
+
+Now find the first p-value that exceeds its threshold. Type 'min(which(pvals.pass.thresh))'
+
+```{r}
+min(which(pvals.pass.thresh))
+```
+
+*** .hint
+Type 'min(which(pvals.pass.thresh))'
+
+--- &text
+
+If the index of this p-value is 1, then none of the hypothesis test are rejected, and we have made no discoveries. If the index, k, of this p-value is greater than 1, we would reject the first k-1 'sorted hypotheses'. i.e. the k-1 hypotheses corresponding to the first k-1 sorted p-values.
+
+--- &text
+
+Our last bit of instruction for this lesson will cover another powerful framework in multiple testing correction.
+
+--- &text
+
+Throughout this lesson, we have looked at 3 ways to control the familywise error rate at a desired level. That is we have enforced an upper bound on the probability of making ANY type I error. As you have seen from the thresholds required for individual tests, this method of controlling the FWER leads to extremely stringent individual test criteria. With a very large number of tests, power is decreased so much that it becomes very unlikely that we will make a discovery at all!
+
+--- &text
+
+An alternative error metric to the FWER is the false discovery rate (FDR). In FDR controlling procedures, we try to control the EXPECTED NUMBER of false discoveries. So if we partition our discoveries into false positives (FP) and true positives (TP), the true FDR is FP/(FP+TP) and is defined to be 0 when FP+TP=0. Because most of the time we cannot know which of our discoveries are true discoveries and which are false, we can only control the expected FDR: E[FP/(FP+TP)].
+
+--- &text
+
+We will look at only one method of controlling the FDR, but this method is one of the most widely used controlling procedures and was developed by Benjamini and Hochberg. In the Benjamini-Hochberg (BH) procedure, we first sort the p-values and associated hypotheses (as in the Holm-Bonferroni method). We find the largest index k such that the k-th sorted p-value is less than or equal to alpha*k/T, where alpha is the desired upper bound on the expected false discovery rate. We then reject the first k sorted hypotheses.
+
+--- &cmd_question
+
+Let's use the BH procedure in the same simulated dataset we've been using so far. Let's use a FDR of 0.05. Calculate the threshold for each p-value by typing 'thresholds2 = alpha*seq(1,t)/t'
+
+```{r}
+thresholds2 = alpha*seq(1,t)/t
+```
+
+*** .hint
+Type 'thresholds2 = alpha*seq(1,t)/t'
+
+--- &cmd_question
+
+Now let's see which p-values are below their thresholds.
+
+```{r}
+pvals.pass.thresh2 = pvals.sorted[[1]] <= thresholds2
+```
+
+*** .hint
+Type 'pvals.pass.thresh2 = pvals.sorted[[1]] <= thresholds2'
+
+--- &cmd_question
+
+Now let's find the largest index of the p-value that lies below its threshold.
+
+```{r}
+max(which(pvals.pass.thresh2))
+```
+
+*** .hint
+Type 'max(which(pvals.pass.thresh2))'
+
+--- &text
+
+If the index returned is Inf, then there was no p-value that was below its threshold, and there are no discoveries. Otherwise, if the largest index that was below its threshold is k, then we would reject the hypotheses corresponding to the first k sorted p-values.
+
+--- &text
+
+Now let's apply these corrections to more interesting datasets. The files
+multtest_1.rda
+multtest_2.rda
+multtest_3.rda
+contain simulated gene expression data from three variations of a hypothetical case-control study of disease X. In each dataset, there are 42 cases (labeled 1) and 76 controls (labeled 2), and for each subject, gene expression levels for a total of 1642 genes were collected.
+
+--- &text
+
+Your task is to find which genes are differentially expressed between the cases and the controls while correcting for multiple testing in the 4 ways discussed in this tutorial: Bonferroni, Sidak, Holm-Bonferroni, and Benjamini-Hochberg. Use the Wilcoxon rank sum test to compare the gene expression levels in the 2 groups. Hint: the command
+test.results = apply(data,1,function(row){ wilcox.test(row[1:num.group1],row[(num.group1+1):num.people])$p.value })
+will run a Wilcoxon rank sum test for each gene and give you the approximate p-value for the test. Some other variables you may need are:
+num.group1 = 42
+num.group2 = 76
+num.people = num.group1 + num.group2
+
+--- &cmd_question
+
+Load the datasets with 'load(filename.rda)' where filename.rda is the name of one of the 3 files provided. Type play() at the command prompt to perform your analysis. When you are ready to check your answers, type nxt() to return to swirl. Then type 'ready = T' to begin checking your answers.
+
+```{r}
+ready = T
+```
+
+*** .hint
+Type 'ready = T' to start checking your answers!
+
+--- &text
+
+Let's review your answers! To put the answers in context, I will tell you now about the true characteristics of the datasets. In all 3 datasets, the first 164 genes have different expression levels between the cases and controls, and the last 1478 genes do not. The only difference between the 3 datasets is the variance in the measurements for differentially expressed genes and non-differentially expressed genes. The point is to illustrate how true positive, false positive, true negative, and false negative rates for these different correction procedures are impacted by variability in the data.
+
+--- &text
+
+Dataset 1: The differentially expressed genes that should have been detected for each of the methods are given below.
+Bonferroni
+11      25      65      77      99     119     142     161
+Sidak
+11      25      65      77      99     119     142     161
+Holm-Bonferroni
+11      25      65      77      99     119     142     161
+Benjamini-Hochberg
+6  11  14  19  21  24  25  30  39  61  65  72  74  77  97  99 118 119 130 142 145 161 163
+
+--- &text
+
+Note that the all 4 methods correctly identified a subset of the differentially expressed genes, but the BH procedure identified more of the differentially expressed genes. This illustrates the increased power of the BH procedure. In this dataset, there were no false detections, but there were false negatives.
+
+--- &text
+
+Dataset 2:
+Bonferroni
+19      21      30      36      46      52      54      70      72      79      90     107     108     133     142     146     147
+Sidak
+19      21      30      36      46      52      54      70      72      75      79      90     107     108     133     142     146     147
+Holm-Bonferroni
+19  21  30  36  46  52  54  70  72  75  79  90  107  108  133  142  146  147
+Benjamini-Hochberg
+ [1]    4    5    7    9   11   13   15   16   19   21   23   24   25   26   30   32   33   34   36   39   41   46   48   49   51   52
+[27]   53   54   55   59   61   62   63   64   65   67   68   70   71   72   73   74   75   77   78   79   85   86   88   90   91   93
+[53]   97   99  100  101  104  107  108  113  115  116  117  119  120  129  132  133  136  141  142  146  147  150  152  156  157  158
+[79]  159  161  162  164  325  639  779  901 1032 1552 1629
+
+--- &text
+
+Note how there was an increase in the number of detections in this dataset. This second dataset was generated with lower variance for the gene expression measurements of the differentially expressed genes. This caused lower p-values overall by making the differences between groups a little bit more obvious and allowed the methods to make more detections. Again the BH procedure demonstrated greater power, but it also made some false discoveries. There were 7 false discoveries (325, 639, 779, 901, 1032, 1552, 1629) out of 89 total discoveries which is a false discovery rate of 0.079. But wait! We wanted to control the FDR at 0.05. Right--but remember that the BH procedure can only control the EXPECTED false discovery rate. We weren't too far off here. Just keep in mind that the expected FDR is not the same as the true FDR.
+
+--- &text
+
+Dataset 3:
+Bonferroni
+ [1]   1   5   6  11  14  15  16  19  21  24  25  30  34  39  47  50  61  65  72  74  77  79  86  87  88  94  97  99 118 119 129 130 132
+[34] 136 142 144 145 160 161 163
+Sidak
+ [1]   1   5   6  11  14  15  16  19  21  24  25  30  34  39  47  50  61  65  72  74  77  79  86  87  88  94  97  99 118 119 129 130 132
+[34] 136 142 144 145 160 161 163
+Holm-Bonferroni
+ [1]   1   5   6  11  14  15  16  19  21  24  25  30  34  39  47  50  61  65  72  74  77  79  86  87  88  94  97  99 118 119 129 130 132
+[34] 136 142 144 145 160 161 163
+Benjamini-Hochberg
+  [1]    1    2    3    5    6    7    8    9   11   12   14   15   16   17   18   19   20   21   23   24   25   26   27   28   29   30
+ [27]   31   32   34   36   37   38   39   40   42   43   47   49   50   51   54   55   56   60   61   65   66   67   68   69   70   71
+ [53]   72   74   75   76   77   78   79   80   81   83   85   86   87   88   89   90   93   94   95   96   97   98   99  100  101  103
+ [79]  104  105  106  108  109  110  111  112  113  114  116  117  118  119  120  122  123  125  127  128  129  130  131  132  134  135
+[105]  136  138  139  140  142  144  145  146  147  148  149  150  151  152  153  154  155  156  157  160  161  162  163  164  276  838
+[131] 1237
+
+--- &text
+
+Again there was an increase in the number of detections in this dataset. This third dataset was generated with an even lower variance for the gene expression measurements of the differentially expressed genes, but also greater variance in the expression measurements for the non-differentially expressed genes. The BH procedure continues to demonstrate greater power and actually makes fewer false discoveries this time. Here, the FDR is controlled at a rate of 0.05 (it is in fact 3/131 = 0.022).
+
+--- &text
+
+So in summary, you have learned three ways of controlling the familywise error rate. The Bonferroni and Holm-Bonferroni methods do not require independence while the Sidak correction does. All three methods can lead to very stringent significance levels for individual tests if the number of tests is very large. You also learned about a different type of multiple testing control: control of the false discovery rate. The primary method used for this is the Benjamini-Hochberg procedure. As it was covered in this lesson, the BH procedure requires independence of the test, but there are variants of the procedure that can be applied under certain dependence conditions of the hypothesis tests.
