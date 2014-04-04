@@ -159,7 +159,7 @@ So given a FWER, alpha, and the number of independent tests being performed, t, 
 
 --- &cmd_question
 
-Let's apply the Sidak correction to the dataset we simulated in the last example. Calculate the type I error probability for an individual test using the fact that we want to control our FWER at 0.05 and we are performing t = 100,000 independent tests. Store this number in a variable called alphaSidak.
+Let's apply the Sidak correction to the dataset we simulated in the last example. Calculate the type I error probability for an individual test using the fact that we want to control our FWER at 0.05 and we are performing t = 100,000 independent tests. Store this number in a variable called alphaSidak by typing 'alphaSidak = 1-(1-alpha)^(1/t)'
 
 ```{r}
 alphaSidak = 1-(1-alpha)^(1/t)
@@ -167,9 +167,6 @@ alphaSidak = 1-(1-alpha)^(1/t)
 
 *** .hint
 Try 'alphaSidak = 1-(1-alpha)^(1/t)'
-
-*** .ans_tests
-omnitest(correctVal = 5.129328e-07)
 
 --- &text
 Nice! Note how the significance threshold for an individual test using the Sidak correction is slightly less conservative than for the Bonferroni correction (5E-7). (i.e. The Sidak cutoff is higher, which increases the chance of a type I error/false positive but also increases power.)
