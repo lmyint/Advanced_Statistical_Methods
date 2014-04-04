@@ -86,6 +86,9 @@ pvals = apply(mat,1,function(row) {t.test(row)$p.value} )
 *** .hint
 Type 'pvals = apply(mat,1,function(row) {t.test(row)$p.value} )'
 
+*** .ans_tests
+expr_equivalent_to('pvals = apply(mat,1,function(row) {t.test(row)$p.value} )')
+
 --- &text
 
 Good! So we are performing 100,000 tests, and each test is testing whether the data come from a distribution with mean 0. (They all do!)
